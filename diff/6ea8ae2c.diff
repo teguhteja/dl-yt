@@ -1,0 +1,1604 @@
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..5615c62
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,2 @@
++
++cookies.txt
+diff --git a/chat/chat_20250823221229.md b/chat/chat_20250823221229.md
+new file mode 100644
+index 0000000..e043110
+--- /dev/null
++++ b/chat/chat_20250823221229.md
+@@ -0,0 +1,76 @@
++# Chat Session - 2025-08-23 22:12:29
++
++## User Request
++tolong pisahkan file @dl-yt-720.py menjadi modular dan tempatkan file ke dalam folder lib
++
++## Assistant Response
++
++I'll help you refactor the `dl-yt-720.py` file into a modular structure and place the modules in a `lib` folder.
++
++### Analysis
++
++Based on the code analysis, I identified these logical modules:
++
++1. **URL utilities** - Functions for extracting YouTube codes from URLs
++2. **File utilities** - Functions for file operations and checking  
++3. **Download utilities** - Functions for downloading videos, audio, and subtitles
++4. **Video processing** - Functions for combining audio/video files
++5. **Configuration** - Argument parsing and setup
++
++### Created Structure
++
++```
++lib/
++├── __init__.py
++├── config.py          # Argument parsing dan konfigurasi
++├── url_utils.py        # Utilitas URL YouTube  
++├── file_utils.py       # Operasi file dan validasi
++├── download_utils.py   # Fungsi download video/audio
++└── video_utils.py      # Pemrosesan video (combine, remove)
++
++dl-yt-720-modular.py    # Script utama yang menggunakan modul
++```
++
++### Module Functions
++
++Each module has specific functions:
++
++#### `config.py`
++- `get_arguments()`: Parse command line arguments
++- `build_yt_commands()`: Build yt-dlp command strings based on arguments
++
++#### `url_utils.py` 
++- `get_code_from_url()`: Extract YouTube video code from URL
++
++#### `file_utils.py`
++- `get_namefile_code()`: Extract code from filename
++- `get_mp4_m4a()`: Separate MP4 and M4A files from a list  
++- `check_files_with_code_and_ext()`: Check for files with specific code and extensions
++- `remove_link_yt_in_file()`: Comment out a YouTube link in the list
++- `preparation_download()`: Prepare download environment and validate files
++
++#### `download_utils.py`
++- `download_file()`: Download file using yt-dlp asynchronously
++- `get_code_audio_video()`: Get audio and video codes from yt-dlp format listing
++- `sync_download_file()`: Synchronously download subtitle, audio, and video files
++
++#### `video_utils.py`
++- `combine_audio_video()`: Combine audio and video files using ffmpeg
++- `remove_file()`: Remove original files and rename the combined file
++
++### Main Script
++The main script `dl-yt-720-modular.py` imports all functions from lib modules and maintains the same functionality as the original file.
++
++## Files Created
++
++1. `/home/teguhteja/Project/PythonProjects/dl-yt/lib/__init__.py`
++2. `/home/teguhteja/Project/PythonProjects/dl-yt/lib/url_utils.py`
++3. `/home/teguhteja/Project/PythonProjects/dl-yt/lib/file_utils.py`
++4. `/home/teguhteja/Project/PythonProjects/dl-yt/lib/download_utils.py`
++5. `/home/teguhteja/Project/PythonProjects/dl-yt/lib/video_utils.py`
++6. `/home/teguhteja/Project/PythonProjects/dl-yt/lib/config.py`
++7. `/home/teguhteja/Project/PythonProjects/dl-yt/dl-yt-720-modular.py`
++
++## Result
++
++File berhasil dipisahkan menjadi struktur modular dengan setiap modul memiliki fungsi spesifik. Script utama mengimpor semua fungsi dari modul lib dan memiliki fungsionalitas yang sama dengan file asli.
+\ No newline at end of file
+diff --git a/chat/youtube-transcript-api.readme.md b/chat/youtube-transcript-api.readme.md
+new file mode 100644
+index 0000000..3dfee02
+--- /dev/null
++++ b/chat/youtube-transcript-api.readme.md
+@@ -0,0 +1,588 @@
++<h1 align="center">
++  ✨ YouTube Transcript API ✨
++</h1>
++
++<p align="center">
++  <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BAENLEW8VUJ6G&source=url">
++    <img src="https://img.shields.io/badge/Donate-PayPal-green.svg" alt="Donate">
++  </a>
++  <a href="https://github.com/jdepoix/youtube-transcript-api/actions">
++    <img src="https://github.com/jdepoix/youtube-transcript-api/actions/workflows/ci.yml/badge.svg?branch=master" alt="Build Status">
++  </a>
++  <a href="https://coveralls.io/github/jdepoix/youtube-transcript-api?branch=master">
++    <img src="https://coveralls.io/repos/github/jdepoix/youtube-transcript-api/badge.svg?branch=master" alt="Coverage Status">
++  </a>
++  <a href="http://opensource.org/licenses/MIT">
++    <img src="http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat" alt="MIT license">
++  </a>
++  <a href="https://pypi.org/project/youtube-transcript-api/">
++    <img src="https://img.shields.io/pypi/v/youtube-transcript-api.svg" alt="Current Version">
++  </a>
++  <a href="https://pypi.org/project/youtube-transcript-api/">
++    <img src="https://img.shields.io/pypi/pyversions/youtube-transcript-api.svg" alt="Supported Python Versions">
++  </a>
++</p>
++
++<p align="center">
++  <b>This is a python API which allows you to retrieve the transcript/subtitles for a given YouTube video. It also works for automatically generated subtitles, supports translating subtitles and it does not require a headless browser, like other selenium based solutions do!</b>
++</p>
++<p align="center">
++ Maintenance of this project is made possible by all the <a href="https://github.com/jdepoix/youtube-transcript-api/graphs/contributors">contributors</a> and <a href="https://github.com/sponsors/jdepoix">sponsors</a>. If you'd like to sponsor this project and have your avatar or company logo appear below <a href="https://github.com/sponsors/jdepoix">click here</a>. 💖
++</p>
++
++<p align="center">
++  <a href="https://www.searchapi.io">
++    <picture>
++      <source media="(prefers-color-scheme: dark)" srcset="https://www.searchapi.io/press/v1/svg/searchapi_logo_white_h.svg">
++      <source media="(prefers-color-scheme: light)" srcset="https://www.searchapi.io/press/v1/svg/searchapi_logo_black_h.svg">
++      <img alt="SearchAPI" src="https://www.searchapi.io/press/v1/svg/searchapi_logo_black_h.svg" height="40px" style="vertical-align: middle;">
++    </picture>
++  </a>
++  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
++  <a href="https://supadata.ai">
++    <picture>
++      <source media="(prefers-color-scheme: dark)" srcset="https://supadata.ai/logo-dark.svg">
++      <source media="(prefers-color-scheme: light)" srcset="https://supadata.ai/logo-light.svg">
++      <img alt="supadata" src="https://supadata.ai/logo-light.svg" height="40px">
++    </picture>
++  </a>
++  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
++  <a href="https://www.dumplingai.com">
++    <picture>
++      <source media="(prefers-color-scheme: dark)" srcset="https://www.dumplingai.com/logos/logo-dark.svg">
++      <source media="(prefers-color-scheme: light)" srcset="https://www.dumplingai.com/logos/logo-light.svg">
++      <img alt="Dumpling AI" src="https://www.dumplingai.com/logos/logo-light.svg" height="40px" style="vertical-align: middle;">
++    </picture>
++  </a>
++</p>
++
++## Install
++
++It is recommended to [install this module by using pip](https://pypi.org/project/youtube-transcript-api/):
++
++```
++pip install youtube-transcript-api
++```
++
++You can either integrate this module [into an existing application](#api) or just use it via a [CLI](#cli).
++
++## API
++
++The easiest way to get a transcript for a given video is to execute:
++
++```python
++from youtube_transcript_api import YouTubeTranscriptApi
++
++ytt_api = YouTubeTranscriptApi()
++ytt_api.fetch(video_id)
++```
++
++> **Note:** By default, this will try to access the English transcript of the video. If your video has a different 
++> language, or you are interested in fetching a transcript in a different language, please read the section below.
++
++> **Note:** Pass in the video ID, NOT the video URL. For a video with the URL `https://www.youtube.com/watch?v=12345` 
++> the ID is `12345`.
++
++This will return a `FetchedTranscript` object looking somewhat like this:
++
++```python
++FetchedTranscript(
++    snippets=[
++        FetchedTranscriptSnippet(
++            text="Hey there",
++            start=0.0,
++            duration=1.54,
++        ),
++        FetchedTranscriptSnippet(
++            text="how are you",
++            start=1.54,
++            duration=4.16,
++        ),
++        # ...
++    ],
++    video_id="12345",
++    language="English",
++    language_code="en",
++    is_generated=False,
++)
++```
++
++This object implements most interfaces of a `List`:
++
++```python
++ytt_api = YouTubeTranscriptApi()
++fetched_transcript = ytt_api.fetch(video_id)
++
++# is iterable
++for snippet in fetched_transcript:
++    print(snippet.text)
++
++# indexable
++last_snippet = fetched_transcript[-1]
++
++# provides a length
++snippet_count = len(fetched_transcript)
++```
++
++If you prefer to handle the raw transcript data you can call `fetched_transcript.to_raw_data()`, which will return 
++a list of dictionaries:
++
++```python
++[
++    {
++        'text': 'Hey there',
++        'start': 0.0,
++        'duration': 1.54
++    },
++    {
++        'text': 'how are you',
++        'start': 1.54
++        'duration': 4.16
++    },
++    # ...
++]
++```
++### Retrieve different languages
++
++You can add the `languages` param if you want to make sure the transcripts are retrieved in your desired language 
++(it defaults to english).
++
++```python
++YouTubeTranscriptApi().fetch(video_id, languages=['de', 'en'])
++```
++
++It's a list of language codes in a descending priority. In this example it will first try to fetch the german 
++transcript (`'de'`) and then fetch the english transcript (`'en'`) if it fails to do so. If you want to find out 
++which languages are available first, [have a look at `list()`](#list-available-transcripts).
++
++If you only want one language, you still need to format the `languages` argument as a list
++
++```python
++YouTubeTranscriptApi().fetch(video_id, languages=['de'])
++```
++
++### Preserve formatting
++
++You can also add `preserve_formatting=True` if you'd like to keep HTML formatting elements such as `<i>` (italics) 
++and `<b>` (bold).
++
++```python
++YouTubeTranscriptApi().fetch(video_ids, languages=['de', 'en'], preserve_formatting=True)
++```
++
++### List available transcripts
++
++If you want to list all transcripts which are available for a given video you can call:
++
++```python
++ytt_api = YouTubeTranscriptApi()
++transcript_list = ytt_api.list(video_id)
++```
++
++This will return a `TranscriptList` object which is iterable and provides methods to filter the list of transcripts for 
++specific languages and types, like:
++
++```python
++transcript = transcript_list.find_transcript(['de', 'en'])
++```
++
++By default this module always chooses manually created transcripts over automatically created ones, if a transcript in 
++the requested language is available both manually created and generated. The `TranscriptList` allows you to bypass this 
++default behaviour by searching for specific transcript types:
++
++```python
++# filter for manually created transcripts
++transcript = transcript_list.find_manually_created_transcript(['de', 'en'])
++
++# or automatically generated ones
++transcript = transcript_list.find_generated_transcript(['de', 'en'])
++```
++
++The methods `find_generated_transcript`, `find_manually_created_transcript`, `find_transcript` return `Transcript` 
++objects. They contain metadata regarding the transcript:
++
++```python
++print(
++    transcript.video_id,
++    transcript.language,
++    transcript.language_code,
++    # whether it has been manually created or generated by YouTube
++    transcript.is_generated,
++    # whether this transcript can be translated or not
++    transcript.is_translatable,
++    # a list of languages the transcript can be translated to
++    transcript.translation_languages,
++)
++```
++
++and provide the method, which allows you to fetch the actual transcript data:
++
++```python
++transcript.fetch()
++```
++
++This returns a `FetchedTranscript` object, just like `YouTubeTranscriptApi().fetch()` does.
++
++### Translate transcript
++
++YouTube has a feature which allows you to automatically translate subtitles. This module also makes it possible to 
++access this feature. To do so `Transcript` objects provide a `translate()` method, which returns a new translated 
++`Transcript` object:
++
++```python
++transcript = transcript_list.find_transcript(['en'])
++translated_transcript = transcript.translate('de')
++print(translated_transcript.fetch())
++```
++
++### By example
++```python
++from youtube_transcript_api import YouTubeTranscriptApi
++
++ytt_api = YouTubeTranscriptApi()
++
++# retrieve the available transcripts
++transcript_list = ytt_api.list('video_id')
++
++# iterate over all available transcripts
++for transcript in transcript_list:
++
++    # the Transcript object provides metadata properties
++    print(
++        transcript.video_id,
++        transcript.language,
++        transcript.language_code,
++        # whether it has been manually created or generated by YouTube
++        transcript.is_generated,
++        # whether this transcript can be translated or not
++        transcript.is_translatable,
++        # a list of languages the transcript can be translated to
++        transcript.translation_languages,
++    )
++
++    # fetch the actual transcript data
++    print(transcript.fetch())
++
++    # translating the transcript will return another transcript object
++    print(transcript.translate('en').fetch())
++
++# you can also directly filter for the language you are looking for, using the transcript list
++transcript = transcript_list.find_transcript(['de', 'en'])  
++
++# or just filter for manually created transcripts  
++transcript = transcript_list.find_manually_created_transcript(['de', 'en'])  
++
++# or automatically generated ones  
++transcript = transcript_list.find_generated_transcript(['de', 'en'])
++```
++
++## Working around IP bans (`RequestBlocked` or `IpBlocked` exception)
++
++Unfortunately, YouTube has started blocking most IPs that are known to belong to cloud providers (like AWS, Google Cloud 
++Platform, Azure, etc.), which means you will most likely run into `RequestBlocked` or `IpBlocked` exceptions when 
++deploying your code to any cloud solutions. Same can happen to the IP of your self-hosted solution, if you are doing 
++too many requests. You can work around these IP bans using proxies. However, since YouTube will ban static proxies 
++after extended use, going for rotating residential proxies provide is the most reliable option.
++
++There are different providers that offer rotating residential proxies, but after testing different 
++offerings I have found [Webshare](https://www.webshare.io/?referral_code=w0xno53eb50g) to be the most reliable and have 
++therefore integrated it into this module, to make setting it up as easy as possible.
++
++### Using [Webshare](https://www.webshare.io/?referral_code=w0xno53eb50g)
++
++Once you have created a [Webshare account](https://www.webshare.io/?referral_code=w0xno53eb50g) and purchased a 
++"Residential" proxy package that suits your workload (make sure NOT to purchase "Proxy Server" or 
++"Static Residential"!), open the 
++[Webshare Proxy Settings](https://dashboard.webshare.io/proxy/settings?referral_code=w0xno53eb50g) to retrieve 
++your "Proxy Username" and "Proxy Password". Using this information you can initialize the `YouTubeTranscriptApi` as 
++follows:
++
++```python
++from youtube_transcript_api import YouTubeTranscriptApi
++from youtube_transcript_api.proxies import WebshareProxyConfig
++
++ytt_api = YouTubeTranscriptApi(
++    proxy_config=WebshareProxyConfig(
++        proxy_username="<proxy-username>",
++        proxy_password="<proxy-password>",
++    )
++)
++
++# all requests done by ytt_api will now be proxied through Webshare
++ytt_api.fetch(video_id)
++```
++
++Using the `WebshareProxyConfig` will default to using rotating residential proxies and requires no further 
++configuration.
++
++You can also limit the pool of IPs that you will be rotating through to those located in specific countries. By 
++choosing locations that are close to the machine that is running your code, you can reduce latency. Also, this 
++can be used to work around location-based restrictions. 
++
++```python
++ytt_api = YouTubeTranscriptApi(
++    proxy_config=WebshareProxyConfig(
++        proxy_username="<proxy-username>",
++        proxy_password="<proxy-password>",
++        filter_ip_locations=["de", "us"],
++    )
++)
++
++# Webshare will now only rotate through IPs located in Germany or the United States!
++ytt_api.fetch(video_id)
++```
++
++You can find the 
++full list of available locations (and how many IPs are available in each location) 
++[here](https://www.webshare.io/features/proxy-locations?referral_code=w0xno53eb50g).
++
++Note that [referral links are used here](https://www.webshare.io/?referral_code=w0xno53eb50g) and any purchases 
++made through these links will support this Open Source project (at no additional cost of course!), which is very much 
++appreciated! 💖😊🙏💖
++
++However, you are of course free to integrate your own proxy solution using the `GenericProxyConfig` class, if you 
++prefer using another provider or want to implement your own solution, as covered by the following section.
++
++### Using other Proxy solutions
++
++Alternatively to using [Webshare](#using-webshare), you can set up any generic HTTP/HTTPS/SOCKS proxy using the 
++`GenericProxyConfig` class:
++
++```python
++from youtube_transcript_api import YouTubeTranscriptApi
++from youtube_transcript_api.proxies import GenericProxyConfig
++
++ytt_api = YouTubeTranscriptApi(
++    proxy_config=GenericProxyConfig(
++        http_url="http://user:pass@my-custom-proxy.org:port",
++        https_url="https://user:pass@my-custom-proxy.org:port",
++    )
++)
++
++# all requests done by ytt_api will now be proxied using the defined proxy URLs
++ytt_api.fetch(video_id)
++```
++
++Be aware that using a proxy doesn't guarantee that you won't be blocked, as YouTube can always block the IP of your 
++proxy! Therefore, you should always choose a solution that rotates through a pool of proxy addresses, if you want to
++maximize reliability.
++
++## Overwriting request defaults
++
++When initializing a `YouTubeTranscriptApi` object, it will create a `requests.Session` which will be used for all
++HTTP(S) request. This allows for caching cookies when retrieving multiple requests. However, you can optionally pass a
++`requests.Session` object into its constructor, if you manually want to share cookies between different instances of
++`YouTubeTranscriptApi`, overwrite defaults, set custom headers, specify SSL certificates, etc.
++
++```python
++from requests import Session
++
++http_client = Session()
++
++# set custom header
++http_client.headers.update({"Accept-Encoding": "gzip, deflate"})
++
++# set path to CA_BUNDLE file
++http_client.verify = "/path/to/certfile"
++
++ytt_api = YouTubeTranscriptApi(http_client=http_client)
++ytt_api.fetch(video_id)
++
++# share same Session between two instances of YouTubeTranscriptApi
++ytt_api_2 = YouTubeTranscriptApi(http_client=http_client)
++# now shares cookies with ytt_api
++ytt_api_2.fetch(video_id)
++```
++
++## Cookie Authentication
++
++Some videos are age restricted, so this module won't be able to access those videos without some sort of
++authentication. Unfortunately, some recent changes to the YouTube API have broken the current implementation of cookie 
++based authentication, so this feature is currently not available.
++
++## Using Formatters
++Formatters are meant to be an additional layer of processing of the transcript you pass it. The goal is to convert a
++`FetchedTranscript` object into a consistent string of a given "format". Such as a basic text (`.txt`) or even formats 
++that have a defined specification such as JSON (`.json`), WebVTT (`.vtt`), SRT (`.srt`), Comma-separated format 
++(`.csv`), etc...
++
++The `formatters` submodule provides a few basic formatters, which can be used as is, or extended to your needs:
++
++- JSONFormatter
++- PrettyPrintFormatter
++- TextFormatter
++- WebVTTFormatter
++- SRTFormatter
++
++Here is how to import from the `formatters` module.
++
++```python
++# the base class to inherit from when creating your own formatter.
++from youtube_transcript_api.formatters import Formatter
++
++# some provided subclasses, each outputs a different string format.
++from youtube_transcript_api.formatters import JSONFormatter
++from youtube_transcript_api.formatters import TextFormatter
++from youtube_transcript_api.formatters import WebVTTFormatter
++from youtube_transcript_api.formatters import SRTFormatter
++```
++
++### Formatter Example
++Let's say we wanted to retrieve a transcript and store it to a JSON file. That would look something like this:
++
++```python
++# your_custom_script.py
++
++from youtube_transcript_api import YouTubeTranscriptApi
++from youtube_transcript_api.formatters import JSONFormatter
++
++ytt_api = YouTubeTranscriptApi()
++transcript = ytt_api.fetch(video_id)
++
++formatter = JSONFormatter()
++
++# .format_transcript(transcript) turns the transcript into a JSON string.
++json_formatted = formatter.format_transcript(transcript)
++
++# Now we can write it out to a file.
++with open('your_filename.json', 'w', encoding='utf-8') as json_file:
++    json_file.write(json_formatted)
++
++# Now should have a new JSON file that you can easily read back into Python.
++```
++
++**Passing extra keyword arguments**
++
++Since JSONFormatter leverages `json.dumps()` you can also forward keyword arguments into 
++`.format_transcript(transcript)` such as making your file output prettier by forwarding the `indent=2` keyword argument.
++
++```python
++json_formatted = JSONFormatter().format_transcript(transcript, indent=2)
++```
++
++### Custom Formatter Example
++You can implement your own formatter class. Just inherit from the `Formatter` base class and ensure you implement the 
++`format_transcript(self, transcript: FetchedTranscript, **kwargs) -> str` and 
++`format_transcripts(self, transcripts: List[FetchedTranscript], **kwargs) -> str` methods which should ultimately 
++return a string when called on your formatter instance.
++
++```python
++class MyCustomFormatter(Formatter):
++    def format_transcript(self, transcript: FetchedTranscript, **kwargs) -> str:
++        # Do your custom work in here, but return a string.
++        return 'your processed output data as a string.'
++
++    def format_transcripts(self, transcripts: List[FetchedTranscript], **kwargs) -> str:
++        # Do your custom work in here to format a list of transcripts, but return a string.
++        return 'your processed output data as a string.'
++```
++
++## CLI
++
++Execute the CLI script using the video ids as parameters and the results will be printed out to the command line:  
++
++```  
++youtube_transcript_api <first_video_id> <second_video_id> ...  
++```  
++
++The CLI also gives you the option to provide a list of preferred languages:  
++
++```  
++youtube_transcript_api <first_video_id> <second_video_id> ... --languages de en  
++```
++
++You can also specify if you want to exclude automatically generated or manually created subtitles:
++
++```  
++youtube_transcript_api <first_video_id> <second_video_id> ... --languages de en --exclude-generated
++youtube_transcript_api <first_video_id> <second_video_id> ... --languages de en --exclude-manually-created
++```
++
++If you would prefer to write it into a file or pipe it into another application, you can also output the results as 
++json using the following line:  
++
++```  
++youtube_transcript_api <first_video_id> <second_video_id> ... --languages de en --format json > transcripts.json
++```  
++
++Translating transcripts using the CLI is also possible:
++
++```  
++youtube_transcript_api <first_video_id> <second_video_id> ... --languages en --translate de
++```  
++
++If you are not sure which languages are available for a given video you can call, to list all available transcripts:
++
++```  
++youtube_transcript_api --list-transcripts <first_video_id>
++```
++
++If a video's ID starts with a hyphen you'll have to mask the hyphen using `\` to prevent the CLI from mistaking it for 
++a argument name. For example to get the transcript for the video with the ID `-abc123` run:
++
++```
++youtube_transcript_api "\-abc123"
++```
++
++### Working around IP bans using the CLI
++
++If you are running into `ReqestBlocked` or `IpBlocked` errors, because YouTube blocks your IP, you can work around this 
++using residential proxies as explained in 
++[Working around IP bans](#working-around-ip-bans-requestblocked-or-ipblocked-exception). To use
++[Webshare "Residential" proxies](https://www.webshare.io/?referral_code=w0xno53eb50g) through the CLI, you will have to 
++create a [Webshare account](https://www.webshare.io/?referral_code=w0xno53eb50g) and purchase a "Residential" proxy 
++package that suits your workload (make sure NOT to purchase "Proxy Server" or "Static Residential"!). Then you can use 
++the "Proxy Username" and "Proxy Password" which you can find in your 
++[Webshare Proxy Settings](https://dashboard.webshare.io/proxy/settings?referral_code=w0xno53eb50g), to run the following command:
++
++```
++youtube_transcript_api <first_video_id> <second_video_id> --webshare-proxy-username "username" --webshare-proxy-password "password"
++```
++
++If you prefer to use another proxy solution, you can set up a generic HTTP/HTTPS proxy using the following command:
++
++```
++youtube_transcript_api <first_video_id> <second_video_id> --http-proxy http://user:pass@domain:port --https-proxy https://user:pass@domain:port
++```
++
++### Cookie Authentication using the CLI
++
++To authenticate using cookies through the CLI as explained in [Cookie Authentication](#cookie-authentication) run:
++
++```
++youtube_transcript_api <first_video_id> <second_video_id> --cookies /path/to/your/cookies.txt
++```
++
++## Warning  
++
++This code uses an undocumented part of the YouTube API, which is called by the YouTube web-client. So there is no 
++guarantee that it won't stop working tomorrow, if they change how things work. I will however do my best to make things 
++working again as soon as possible if that happens. So if it stops working, let me know!  
++
++## Contributing
++
++To setup the project locally run the following (requires [poetry](https://python-poetry.org/docs/) to be installed):
++```shell
++poetry install --with test,dev
++```
++
++There's [poe](https://github.com/nat-n/poethepoet?tab=readme-ov-file#quick-start) tasks to run tests, coverage, the 
++linter and formatter (you'll need to pass all of those for the build to pass):
++```shell
++poe test
++poe coverage
++poe format
++poe lint
++```
++
++If you just want to make sure that your code passes all the necessary checks to get a green build, you can simply run:
++```shell
++poe precommit
++```
++
++## Donations
++
++If this project makes you happy by reducing your development time, you can make me happy by treating me to a cup of 
++coffee, or become a [Sponsor of this project](https://github.com/sponsors/jdepoix) :)  
++
++[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BAENLEW8VUJ6G&source=url)
+\ No newline at end of file
+diff --git a/dl-yt-136-140-combine.py b/dl-yt-136-140-combine.py
+new file mode 100644
+index 0000000..00e0c42
+--- /dev/null
++++ b/dl-yt-136-140-combine.py
+@@ -0,0 +1,94 @@
++import sys
++import os
++import subprocess
++
++YT_DLP = '~/Videos/_/yt-dlp'
++YT_CMD = '--write-auto-subs --sub-format vtt --sub-lang id -f 136,140 --ignore-error --no-playlist -a'
++# YT_CMD = '-f 136,140 --ignore-error --no-playlist -a'
++
++
++def get_namefile_code(file_path):
++    open_index = file_path.find(' [')
++    close_index =file_path.find('].')
++    file_code = file_path[open_index+2:close_index]
++    return file_code
++
++def get_mp4_m4a(files_combine):
++    f_mp4 = list(filter(lambda x: '.mp4' in x, files_combine))
++    f_m4a = list(filter(lambda x: '.m4a' in x, files_combine))
++    return f_mp4, f_m4a
++
++def delete_line(list_yt, code):
++    new_list = []
++    for yt in list_yt:
++        if code in yt:
++            continue
++        new_list.append(yt)
++    return new_list
++
++# Get input from command line argument
++if len(sys.argv) == 1:
++    print("add argument as folder", )
++    exit()
++    
++my_folder = sys.argv[1]
++if my_folder == '.':
++    my_folder = './'
++
++# Set my_folder as directory
++my_folder = os.path.abspath(my_folder)
++print(my_folder)
++
++file_path = os.path.join(my_folder, 't-yt-dl.txt')
++if os.path.isfile(file_path):
++    print(f"The file t-yt-dl.txt : {file_path} exists.")
++    os.system(f"python3 {YT_DLP} {YT_CMD} {file_path}")
++else:
++    print(f"The file t-yt-dl.txt : {file_path} does not exist. Please add it and insert url youtube links.")
++    exit()
++
++# Get all files in my_folder
++files = os.listdir(my_folder)
++ 
++# Read the list_yt of the file t-yt-dl.txt
++list_yt = []
++with open(file_path, 'r') as f:
++    list_yt = f.read().split('\n')
++
++# Print the list of files
++list_files_code = []
++for my_file in files:
++    if my_file.find(' [') == -1:
++        continue
++    
++    code_file = get_namefile_code(my_file) 
++    if code_file in list_files_code:
++        continue
++    
++    my_files_combine = list(filter(lambda x: code_file in x, files))
++    f_mp4, f_m4a = get_mp4_m4a(my_files_combine)
++    if not f_mp4 or not f_m4a:
++        continue
++    
++    new_file = f'temp_{f_mp4[0]}'
++    f_mp4 = os.path.join(my_folder, f_mp4[0])
++    f_m4a = os.path.join(my_folder, f_m4a[0])
++    new_file = os.path.join(my_folder, new_file)
++    # os.system(f"ffmpeg -i {f_mp4} -i {f_m4a} -c:v copy -c:a aac {new_file}" )
++    command = ["ffmpeg", "-i", f_mp4, "-i", f_m4a, "-c:v", "copy", "-c:a", "aac", new_file]
++    subprocess.run(command, check=True)
++    
++    if not os.path.exists(new_file):
++        continue
++        
++    os.remove(f_mp4)
++    print(f"Delete file {f_mp4}")
++    os.remove(f_m4a)
++    print(f"Delete file {f_m4a}")
++    list_files_code.append(code_file)
++    os.rename(new_file,f_mp4)
++    print(f"Rename file {new_file}")
++    list_yt = delete_line(list_yt, code_file)
++    # Write list_yt into t-yt-dl.txt
++with open(file_path, 'w') as f:
++    f.write('\n'.join(list_yt))
+diff --git a/dl-yt-720.py b/dl-yt-720.py
+new file mode 100644
+index 0000000..a84cfeb
+--- /dev/null
++++ b/dl-yt-720.py
+@@ -0,0 +1,410 @@
++import sys
++import os
++import subprocess
++import asyncio
++import argparse
++from youtube_transcript_api import YouTubeTranscriptApi
++from youtube_transcript_api.formatters import TextFormatter, SRTFormatter
++
++YT_DLP = '~/Videos/_/yt-dlp --cookies ~/Videos/_/cookies.txt'
++YT_CMD = '--write-auto-subs --sub-format vtt --sub-lang id -f 136,140 --ignore-error --no-playlist -a --cookies ~/Videos/_/cookies.txt'
++YT_CMD_SUB_1 = '--write-auto-subs --sub-format vtt --sub-lang id --ignore-error --no-playlist --cookies ~/Videos/_/cookies.txt'
++YT_CMD_SUB = '--write-auto-subs --ignore-error --no-playlist --cookies ~/Videos/_/cookies.txt'
++YT_CMD_AUDIO = '-f 140 --ignore-error --no-playlist '
++YT_CMD_AUDIO = '-f 140 --ignore-error --no-playlist '
++YT_CMD_VIDEO = '-f 136 --ignore-error --no-playlist '
++MY_FOLDER = ''
++FILE_PATH = ''
++# YT_CMD = '-f 136,140 --ignore-error --no-playlist -a'
++
++
++def get_code_from_url(url):
++    n = 11
++    s_st = 'v='
++    index = url.find(s_st)
++    if index > -1:
++        code = url[index+len(s_st):index+n+len(s_st)]
++        return code
++    s_st = 'be/'
++    index = url.find(s_st)
++    if index > -1:
++        code = url[index+len(s_st):index+n+len(s_st)]
++        return code
++    return None
++
++
++def get_namefile_code(file_path):
++    open_index = file_path.find(' [')
++    close_index =file_path.find('].')
++    file_code = file_path[open_index+2:close_index]
++    return file_code
++
++
++def get_mp4_m4a(files_combine):
++    f_mp4 = list(filter(lambda x: '.mp4' in x, files_combine))
++    f_m4a = list(filter(lambda x: '.m4a' in x, files_combine))
++    return f_mp4, f_m4a
++
++
++def check_files_with_code_and_ext(files, code, exts):
++    #my_files = list(filter(lambda x: x.endswith(ext) and code in get_namefile_code(x), files))
++    my_files = []
++    my_exts = exts.split(',')
++    for file in files:
++        for ext in my_exts:
++            if file.endswith(ext) and code in get_namefile_code(file):
++                my_files.append(file)
++    return my_files
++
++
++def download_transcript_as_txt(video_code, language='id'):
++    try:
++        ytt_api = YouTubeTranscriptApi()
++        transcript = ytt_api.fetch(video_code, languages=[language, 'en'])
++        
++        formatter = TextFormatter()
++        txt_content = formatter.format_transcript(transcript)
++        
++        # Create filename with video code
++        txt_filename = f"transcript_{video_code}.txt"
++        txt_filepath = os.path.join(MY_FOLDER, txt_filename)
++        
++        with open(txt_filepath, 'w', encoding='utf-8') as f:
++            f.write(txt_content)
++        
++        print(f"Downloaded transcript as TXT: {txt_filename}")
++        return txt_filepath
++    except Exception as e:
++        print(f"Failed to download transcript as TXT for {video_code}: {str(e)}")
++        return None
++
++
++def download_transcript_as_srt(video_code, language='id'):
++    try:
++        ytt_api = YouTubeTranscriptApi()
++        transcript = ytt_api.fetch(video_code, languages=[language, 'en'])
++        
++        formatter = SRTFormatter()
++        srt_content = formatter.format_transcript(transcript)
++        
++        # Create filename with video code
++        srt_filename = f"transcript_{video_code}.srt"
++        srt_filepath = os.path.join(MY_FOLDER, srt_filename)
++        
++        with open(srt_filepath, 'w', encoding='utf-8') as f:
++            f.write(srt_content)
++        
++        print(f"Downloaded transcript as SRT: {srt_filename}")
++        return srt_filepath
++    except Exception as e:
++        print(f"Failed to download transcript as SRT for {video_code}: {str(e)}")
++        return None
++
++
++async def download_file(command):
++    process = await asyncio.create_subprocess_shell(
++        command,
++        stdout=asyncio.subprocess.PIPE,
++        stderr=asyncio.subprocess.PIPE
++    )
++
++    stdout, stderr = await process.communicate()
++    
++    if process.returncode == 0:
++        list_out = stdout.splitlines()
++        out = [item.decode() for item in list_out if 'downloaded' in item.decode()] 
++        if out:
++            print(f"{out[0]}")
++        else : 
++            print(f"File Downloaded : {list_out}") 
++    else:
++        print(f"Error downloading file: {stderr.decode()}")
++        
++
++async def get_code_audio_video(command,args):
++    os.system(command)
++    process = await asyncio.create_subprocess_shell(
++        command,
++        stdout=asyncio.subprocess.PIPE,
++        stderr=asyncio.subprocess.PIPE
++    )
++    ca, cv = None, None
++    stdout, stderr = await process.communicate()
++    ext_audio = args.ext_audio
++    ext_video = args.ext_video
++    info_video = args.info_video
++    info_audio = args.info_audio
++    if process.returncode != 0:
++        print(f"Error downloading file: {stderr.decode()}")
++        return ca, cv
++        
++    list_out = stdout.splitlines()
++    for item in list_out:
++        item = item.decode()
++        if ext_audio in item and info_audio in item:
++            ca_list = item.split(' ')
++            ca = ca_list[0]
++        if ext_video in item and info_video in item:
++            cv_list = item.split(' ')
++            cv = cv_list[0]
++    
++    return ca, cv
++
++
++def preparation_download(args):
++    global MY_FOLDER, FILE_PATH
++        
++    MY_FOLDER = args.folder
++    if MY_FOLDER == '.':
++        MY_FOLDER = './'
++
++    # Set my_folder as directory
++    MY_FOLDER = os.path.abspath(MY_FOLDER)
++    print(MY_FOLDER)
++
++    FILE_PATH = os.path.join(MY_FOLDER, args.file)
++    if os.path.isfile(FILE_PATH):
++        print(f"The file {args.file} : {FILE_PATH} exists.")
++        # os.system(f"python3 {YT_DLP} {YT_CMD} {file_path}")
++    else:
++        print(f"The file {args.file} : {FILE_PATH} does not exist. Please add it and insert url youtube links.")
++        exit()
++
++    # Get all files in my_folder
++    files = os.listdir(MY_FOLDER)
++    
++    # Read the list_yt of the file t-yt-dl.txt
++    list_yt = []
++    with open(FILE_PATH, 'r') as f:
++        list_yt = f.read().split('\n')
++    
++    return files, list_yt
++
++
++async def main():
++    files, list_yt = preparation_download()    
++    for link in list_yt:
++        code = get_code_from_url(link)
++        
++        if not code:
++            continue
++        
++        vtt_files = check_files_with_code_and_ext(files, code, '.vtt')
++        if not vtt_files:
++            command = f"python3 {YT_DLP} {YT_CMD_SUB} '{link}'"
++            await download_file(command)
++            
++        audio_files = check_files_with_code_and_ext(files, code, '.m4a')
++        if not audio_files:
++            command = f"python3 {YT_DLP} {YT_CMD_AUDIO} '{link}'"
++            await download_file(command)
++            files = os.listdir(MY_FOLDER)
++            audio_files = check_files_with_code_and_ext(files, code, '.m4a')
++        
++        video_files = check_files_with_code_and_ext(files, code, '.mp4')
++        if not video_files:
++            command = f"python3 {YT_DLP} {YT_CMD_VIDEO} '{link}'"
++            await download_file(command)
++            files = os.listdir(MY_FOLDER)
++            video_files = check_files_with_code_and_ext(files, code, '.mp4')
++        
++        if not audio_files or not video_files:
++            continue
++        
++        new_file = f'temp_{video_files[0]}'
++        f_mp4 = os.path.join(MY_FOLDER, video_files[0])
++        f_m4a = os.path.join(MY_FOLDER, audio_files[0])
++        new_file = os.path.join(MY_FOLDER, new_file)
++        command = ["ffmpeg", "-i", f_mp4, "-i", f_m4a, "-c:v", "copy", "-c:a", "aac", new_file]
++        subprocess.run(command, check=True)
++
++        if not os.path.exists(new_file):
++            continue
++            
++        os.remove(f_mp4)
++        print(f"Delete file {f_mp4}")
++        os.remove(f_m4a)
++        print(f"Delete file {f_m4a}")
++        os.rename(new_file,f_mp4)
++        print(f"Rename file {new_file}")
++        # Write list_yt into t-yt-dl.txt
++        list_yt.remove(link)
++    
++    with open(FILE_PATH, 'w') as f:
++        f.write('\n'.join(list_yt))
++
++
++def get_arguments():
++    global YT_CMD_AUDIO, YT_CMD_VIDEO, YT_CMD_SUB
++    # Create the parser
++    parser = argparse.ArgumentParser(description='A script to download and process videos.')
++
++    # Add arguments
++    parser.add_argument('--folder', default='.', type=str, help='Current folder work')
++    parser.add_argument('-f','--file', default='t-yt-dl.txt', type=str, help='File content link youtube')
++    parser.add_argument('-sf', '--sub-format', default='vtt', type=str, help='Type Subformat of the subtitle')
++    parser.add_argument('-sl', '--sub-lang', default='id', type=str, help='Language of the subtitle')
++    parser.add_argument('-is', '--is-search', type=bool, default=False, help='Is Search using yt-dlp -F ')
++    parser.add_argument('-ca', '--code-audio', type=str, default="140", help='The code audio for download file ')
++    parser.add_argument('-cv', '--code-video', type=str, default="136", help='The code video for download file')
++    parser.add_argument('-ea', '--ext-audio', type=str, default="m4a", help='The ext audio for download file')
++    parser.add_argument('-ev', '--ext-video', type=str, default="mp4", help='The ext video for download file')
++    parser.add_argument('-ev2', '--ext-video2', type=str, default="mkv,webm", help='The ext full video for download file')
++    parser.add_argument('-ia', '--info-audio', type=str, default="720p", help='The info audio for download file')
++    parser.add_argument('-iv', '--info-video', type=str, default="en", help='The info video for download file')
++    parser.add_argument('--download-txt', action='store_true', help='Download subtitles as TXT format using youtube-transcript-api')
++    parser.add_argument('--download-srt', action='store_true', help='Download subtitles as SRT format using youtube-transcript-api')
++
++    # Parse the arguments
++    try:
++        args = parser.parse_args()
++    except SystemExit as e:
++        parser.print_help()
++        sys.exit()
++
++    # Print the arguments (for demonstration purposes)
++    print(f"Folder: {args.folder}, Sub Format: {args.sub_format}, Sub Lang: {args.sub_lang}, Is Search: {args.is_search}, "
++          f"Code Audio: {args.code_audio}, Code Video: {args.code_video}, Ext Audio: {args.ext_audio}, Ext Video : {args.ext_video}, "
++          f"Ext Full Video : {args.ext_video2}, Info Audio: {args.info_audio}, Info Video: {args.info_video}, "
++          f"Download TXT: {args.download_txt}, Download SRT: {args.download_srt}"
++          )
++    
++    YT_CMD_SUB = f"--extractor-args 'youtube:player_client=default,-web' --write-auto-subs --sub-format {args.sub_format} --sub-lang {args.sub_lang} --ignore-error --no-playlist "
++    YT_CMD_SUB_0 = f"--write-auto-subs --ignore-error --no-playlist "
++    YT_CMD_AUDIO = "".join(["-f ", args.code_audio, " --ignore-error --no-playlist"])
++    YT_CMD_AUDIO = "".join(["-f ", args.code_audio, " --ignore-error --no-playlist"])
++    YT_CMD_VIDEO = "".join(["-f ", args.code_video, " --ignore-error --no-playlist"])
++    
++    return args
++    
++def sync_download_file(args, files, code, link):
++    # Download subtitles using youtube-transcript-api for TXT and SRT formats
++    if hasattr(args, 'download_txt') and args.download_txt:
++        txt_files = check_files_with_code_and_ext(files, code, '.txt')
++        if not txt_files:
++            download_transcript_as_txt(code, args.sub_lang)
++    
++    if hasattr(args, 'download_srt') and args.download_srt:
++        srt_files = check_files_with_code_and_ext(files, code, '.srt')
++        if not srt_files:
++            download_transcript_as_srt(code, args.sub_lang)
++    
++    # Keep original VTT download functionality
++    vtt_files = check_files_with_code_and_ext(files, code, args.sub_format)
++    if not vtt_files:
++        command = f"python3 {YT_DLP} {YT_CMD_SUB} '{link}'"
++        print("Download Full : ",command)
++        os.system(command)
++    
++    files = os.listdir(MY_FOLDER)
++    full_video_files = check_files_with_code_and_ext(files, code, args.ext_video2)
++    if full_video_files:
++        return vtt_files, False, False
++    
++    audio_files = check_files_with_code_and_ext(files, code, args.ext_audio)
++    if not audio_files:
++        command = f"python3 {YT_DLP} {YT_CMD_AUDIO} '{link}'"
++        print("Download Audio : ", command)
++        os.system(command)
++        files = os.listdir(MY_FOLDER)
++        audio_files = check_files_with_code_and_ext(files, code, args.ext_audio)
++    
++    video_files = check_files_with_code_and_ext(files, code, args.ext_video)
++    if not video_files:
++        command = f"python3 {YT_DLP} {YT_CMD_VIDEO} '{link}'"
++        print('Download Video : ', command)
++        os.system(command)
++        files = os.listdir(MY_FOLDER)
++        video_files = check_files_with_code_and_ext(files, code, args.ext_video)
++    
++    return vtt_files, audio_files, video_files
++
++def combine_audio_video(video_files, audio_files):
++    new_file = f'temp_{video_files[0]}'
++    f_mp4 = os.path.join(MY_FOLDER, video_files[0])
++    f_m4a = os.path.join(MY_FOLDER, audio_files[0])
++    new_file = os.path.join(MY_FOLDER, new_file)
++    command = ["ffmpeg", "-i", f_mp4, "-i", f_m4a, "-c:v", "copy", "-c:a", "aac", new_file]
++    print(f'combine : {command}')
++    subprocess.run(command, check=True)
++    return new_file, f_mp4, f_m4a
++
++def remove_file(f_mp4, f_m4a, new_file,):
++    os.remove(f_mp4)
++    print(f"Delete file {f_mp4}")
++    os.remove(f_m4a)
++    print(f"Delete file {f_m4a}")
++    os.rename(new_file,f_mp4)
++    print(f"Rename file {new_file}")
++
++def remove_link_yt_in_file(list_yt, link):
++    print('Comment out link : ', link)
++    index = list_yt.index(link)
++    list_yt[index] = f'# {link}'
++    return list_yt
++
++def sync_task_download(args):
++    # my_folder, file_path, 
++    files, list_yt = preparation_download(args)
++    for link in list_yt:
++        
++        code = get_code_from_url(link)
++        if not code or link.startswith('#'):
++            continue
++        
++        _, audio_files, video_files = sync_download_file(args, files, code, link)
++        list_yt = remove_link_yt_in_file(list_yt, link)
++        
++        if not audio_files or not video_files:
++            continue
++            
++        new_file, f_mp4, f_m4a = combine_audio_video(video_files, audio_files)
++        
++        if not os.path.exists(new_file):
++            continue
++        
++        remove_file(f_mp4, f_m4a, new_file,)
++    
++    with open(FILE_PATH, 'w') as f:
++        f.write('\n'.join(list_yt))
++
++async def search_yt_dlp(args):
++    global YT_CMD_AUDIO, YT_CMD_VIDEO 
++    files, list_yt = preparation_download(args)
++    for link in list_yt:
++        code = get_code_from_url(link)
++        if not code or link.startswith('#'):
++            continue
++        
++        command = f"python3 {YT_DLP} -F '{link}' --ignore-error --no-playlist "
++        ca, cv = await get_code_audio_video(command,args)
++        if ca is None :
++            ca = args.code_audio
++        if cv is None :
++            cv = args.code_video
++        
++        YT_CMD_AUDIO = "".join(["-f ", ca, " --ignore-error --no-playlist"])
++        YT_CMD_VIDEO = "".join(["-f ", cv, " --ignore-error --no-playlist"])
++        
++        _, audio_files, video_files = sync_download_file(args, files, code, link)
++        
++        if not audio_files or not video_files:
++            continue
++            
++        new_file, f_mp4, f_m4a = combine_audio_video(video_files, audio_files)
++        
++        if not os.path.exists(new_file):
++            continue
++        
++        list_yt = remove_file(f_mp4, f_m4a, new_file, list_yt, link)
++    
++    with open(FILE_PATH, 'w') as f:
++        f.write('\n'.join(list_yt))
++
++if __name__ == '__main__':
++    args = get_arguments()
++    if args.is_search:
++        asyncio.run(search_yt_dlp(args))
++    else : 
++        sync_task_download(args)
++        # asyncio.run(main())
+diff --git a/lib/__init__.py b/lib/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/lib/__pycache__/__init__.cpython-312.pyc b/lib/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..c2ceb7f
+Binary files /dev/null and b/lib/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/lib/__pycache__/config.cpython-312.pyc b/lib/__pycache__/config.cpython-312.pyc
+new file mode 100644
+index 0000000..34abaf4
+Binary files /dev/null and b/lib/__pycache__/config.cpython-312.pyc differ
+diff --git a/lib/__pycache__/download_utils.cpython-312.pyc b/lib/__pycache__/download_utils.cpython-312.pyc
+new file mode 100644
+index 0000000..acb709c
+Binary files /dev/null and b/lib/__pycache__/download_utils.cpython-312.pyc differ
+diff --git a/lib/__pycache__/file_utils.cpython-312.pyc b/lib/__pycache__/file_utils.cpython-312.pyc
+new file mode 100644
+index 0000000..306db63
+Binary files /dev/null and b/lib/__pycache__/file_utils.cpython-312.pyc differ
+diff --git a/lib/__pycache__/url_utils.cpython-312.pyc b/lib/__pycache__/url_utils.cpython-312.pyc
+new file mode 100644
+index 0000000..08fb773
+Binary files /dev/null and b/lib/__pycache__/url_utils.cpython-312.pyc differ
+diff --git a/lib/__pycache__/video_utils.cpython-312.pyc b/lib/__pycache__/video_utils.cpython-312.pyc
+new file mode 100644
+index 0000000..752aa45
+Binary files /dev/null and b/lib/__pycache__/video_utils.cpython-312.pyc differ
+diff --git a/lib/config.py b/lib/config.py
+new file mode 100644
+index 0000000..240612a
+--- /dev/null
++++ b/lib/config.py
+@@ -0,0 +1,46 @@
++import sys
++import argparse
++
++
++def get_arguments():
++    """Parse command line arguments"""
++    # Create the parser
++    parser = argparse.ArgumentParser(description='A script to download and process videos.')
++
++    # Add arguments
++    parser.add_argument('--folder', default='.', type=str, help='Current folder work')
++    parser.add_argument('-f','--file', default='t-yt-dl.txt', type=str, help='File content link youtube')
++    parser.add_argument('-sf', '--sub-format', default='vtt', type=str, help='Type Subformat of the subtitle')
++    parser.add_argument('-sl', '--sub-lang', default='id', type=str, help='Language of the subtitle')
++    parser.add_argument('-is', '--is-search', type=bool, default=False, help='Is Search using yt-dlp -F ')
++    parser.add_argument('-ca', '--code-audio', type=str, default="140", help='The code audio for download file ')
++    parser.add_argument('-cv', '--code-video', type=str, default="136", help='The code video for download file')
++    parser.add_argument('-ea', '--ext-audio', type=str, default="m4a", help='The ext audio for download file')
++    parser.add_argument('-ev', '--ext-video', type=str, default="mp4", help='The ext video for download file')
++    parser.add_argument('-ev2', '--ext-video2', type=str, default="mkv,webm", help='The ext full video for download file')
++    parser.add_argument('-ia', '--info-audio', type=str, default="720p", help='The info audio for download file')
++    parser.add_argument('-iv', '--info-video', type=str, default="en", help='The info video for download file')
++
++    # Parse the arguments
++    try:
++        args = parser.parse_args()
++    except SystemExit as e:
++        parser.print_help()
++        sys.exit()
++
++    # Print the arguments (for demonstration purposes)
++    print(f"Folder: {args.folder}, Sub Format: {args.sub_format}, Sub Lang: {args.sub_lang}, Is Search: {args.is_search}, "
++          f"Code Audio: {args.code_audio}, Code Video: {args.code_video}, Ext Audio: {args.ext_audio}, Ext Video : {args.ext_video}, "
++          f"Ext Full Video : {args.ext_video2}, Info Audio: {args.info_audio}, Info Vodeo: {args.info_video}"
++          )
++    
++    return args
++
++
++def build_yt_commands(args):
++    """Build yt-dlp command strings based on arguments"""
++    yt_cmd_sub = f"--extractor-args 'youtube:player_client=default,-web' --write-auto-subs --sub-format {args.sub_format} --sub-lang {args.sub_lang} --ignore-error --no-playlist "
++    yt_cmd_audio = "".join(["-f ", args.code_audio, " --ignore-error --no-playlist"])
++    yt_cmd_video = "".join(["-f ", args.code_video, " --ignore-error --no-playlist"])
++    
++    return yt_cmd_sub, yt_cmd_audio, yt_cmd_video
+\ No newline at end of file
+diff --git a/lib/download_utils.py b/lib/download_utils.py
+new file mode 100644
+index 0000000..7c5c3a8
+--- /dev/null
++++ b/lib/download_utils.py
+@@ -0,0 +1,89 @@
++import os
++import asyncio
++from .file_utils import check_files_with_code_and_ext
++
++YT_DLP = '~/Videos/_/yt-dlp --cookies ~/Videos/_/cookies.txt'
++
++
++async def download_file(command):
++    """Download file using yt-dlp asynchronously"""
++    process = await asyncio.create_subprocess_shell(
++        command,
++        stdout=asyncio.subprocess.PIPE,
++        stderr=asyncio.subprocess.PIPE
++    )
++
++    stdout, stderr = await process.communicate()
++    
++    if process.returncode == 0:
++        list_out = stdout.splitlines()
++        out = [item.decode() for item in list_out if 'downloaded' in item.decode()] 
++        if out:
++            print(f"{out[0]}")
++        else : 
++            print(f"File Downloaded : {list_out}") 
++    else:
++        print(f"Error downloading file: {stderr.decode()}")
++
++
++async def get_code_audio_video(command, args):
++    """Get audio and video codes from yt-dlp format listing"""
++    os.system(command)
++    process = await asyncio.create_subprocess_shell(
++        command,
++        stdout=asyncio.subprocess.PIPE,
++        stderr=asyncio.subprocess.PIPE
++    )
++    ca, cv = None, None
++    stdout, stderr = await process.communicate()
++    ext_audio = args.ext_audio
++    ext_video = args.ext_video
++    info_video = args.info_video
++    info_audio = args.info_audio
++    if process.returncode != 0:
++        print(f"Error downloading file: {stderr.decode()}")
++        return ca, cv
++        
++    list_out = stdout.splitlines()
++    for item in list_out:
++        item = item.decode()
++        if ext_audio in item and info_audio in item:
++            ca_list = item.split(' ')
++            ca = ca_list[0]
++        if ext_video in item and info_video in item:
++            cv_list = item.split(' ')
++            cv = cv_list[0]
++    
++    return ca, cv
++
++
++def sync_download_file(args, files, code, link, my_folder, yt_cmd_sub, yt_cmd_audio, yt_cmd_video):
++    """Synchronously download subtitle, audio, and video files"""
++    vtt_files = check_files_with_code_and_ext(files, code, args.sub_format)
++    if not vtt_files:
++        command = f"python3 {YT_DLP} {yt_cmd_sub} '{link}'"
++        print("Download Full : ", command)
++        os.system(command)
++    
++    files = os.listdir(my_folder)
++    full_video_files = check_files_with_code_and_ext(files, code, args.ext_video2)
++    if full_video_files:
++        return vtt_files, False, False
++    
++    audio_files = check_files_with_code_and_ext(files, code, args.ext_audio)
++    if not audio_files:
++        command = f"python3 {YT_DLP} {yt_cmd_audio} '{link}'"
++        print("Download Audio : ", command)
++        os.system(command)
++        files = os.listdir(my_folder)
++        audio_files = check_files_with_code_and_ext(files, code, args.ext_audio)
++    
++    video_files = check_files_with_code_and_ext(files, code, args.ext_video)
++    if not video_files:
++        command = f"python3 {YT_DLP} {yt_cmd_video} '{link}'"
++        print('Download Video : ', command)
++        os.system(command)
++        files = os.listdir(my_folder)
++        video_files = check_files_with_code_and_ext(files, code, args.ext_video)
++    
++    return vtt_files, audio_files, video_files
+\ No newline at end of file
+diff --git a/lib/file_utils.py b/lib/file_utils.py
+new file mode 100644
+index 0000000..2ec281f
+--- /dev/null
++++ b/lib/file_utils.py
+@@ -0,0 +1,63 @@
++import os
++
++
++def get_namefile_code(file_path):
++    """Extract code from filename"""
++    open_index = file_path.find(' [')
++    close_index = file_path.find('].')
++    file_code = file_path[open_index+2:close_index]
++    return file_code
++
++
++def get_mp4_m4a(files_combine):
++    """Separate MP4 and M4A files from a list"""
++    f_mp4 = list(filter(lambda x: '.mp4' in x, files_combine))
++    f_m4a = list(filter(lambda x: '.m4a' in x, files_combine))
++    return f_mp4, f_m4a
++
++
++def check_files_with_code_and_ext(files, code, exts):
++    """Check for files with specific code and extensions"""
++    my_files = []
++    my_exts = exts.split(',')
++    for file in files:
++        for ext in my_exts:
++            if file.endswith(ext) and code in get_namefile_code(file):
++                my_files.append(file)
++    return my_files
++
++
++def remove_link_yt_in_file(list_yt, link):
++    """Comment out a YouTube link in the list"""
++    print('Comment out link : ', link)
++    index = list_yt.index(link)
++    list_yt[index] = f'# {link}'
++    return list_yt
++
++
++def preparation_download(args):
++    """Prepare download environment and validate files"""
++    my_folder = args.folder
++    if my_folder == '.':
++        my_folder = './'
++
++    # Set my_folder as directory
++    my_folder = os.path.abspath(my_folder)
++    print(my_folder)
++
++    file_path = os.path.join(my_folder, args.file)
++    if os.path.isfile(file_path):
++        print(f"The file {args.file} : {file_path} exists.")
++    else:
++        print(f"The file {args.file} : {file_path} does not exist. Please add it and insert url youtube links.")
++        exit()
++
++    # Get all files in my_folder
++    files = os.listdir(my_folder)
++    
++    # Read the list_yt of the file t-yt-dl.txt
++    list_yt = []
++    with open(file_path, 'r') as f:
++        list_yt = f.read().split('\n')
++    
++    return files, list_yt, my_folder, file_path
+\ No newline at end of file
+diff --git a/lib/url_utils.py b/lib/url_utils.py
+new file mode 100644
+index 0000000..88e0543
+--- /dev/null
++++ b/lib/url_utils.py
+@@ -0,0 +1,14 @@
++def get_code_from_url(url):
++    """Extract YouTube video code from URL"""
++    n = 11
++    s_st = 'v='
++    index = url.find(s_st)
++    if index > -1:
++        code = url[index+len(s_st):index+n+len(s_st)]
++        return code
++    s_st = 'be/'
++    index = url.find(s_st)
++    if index > -1:
++        code = url[index+len(s_st):index+n+len(s_st)]
++        return code
++    return None
+\ No newline at end of file
+diff --git a/lib/video_utils.py b/lib/video_utils.py
+new file mode 100644
+index 0000000..cee740a
+--- /dev/null
++++ b/lib/video_utils.py
+@@ -0,0 +1,24 @@
++import os
++import subprocess
++
++
++def combine_audio_video(video_files, audio_files, my_folder):
++    """Combine audio and video files using ffmpeg"""
++    new_file = f'temp_{video_files[0]}'
++    f_mp4 = os.path.join(my_folder, video_files[0])
++    f_m4a = os.path.join(my_folder, audio_files[0])
++    new_file = os.path.join(my_folder, new_file)
++    command = ["ffmpeg", "-i", f_mp4, "-i", f_m4a, "-c:v", "copy", "-c:a", "aac", new_file]
++    print(f'combine : {command}')
++    subprocess.run(command, check=True)
++    return new_file, f_mp4, f_m4a
++
++
++def remove_file(f_mp4, f_m4a, new_file):
++    """Remove original files and rename the combined file"""
++    os.remove(f_mp4)
++    print(f"Delete file {f_mp4}")
++    os.remove(f_m4a)
++    print(f"Delete file {f_m4a}")
++    os.rename(new_file, f_mp4)
++    print(f"Rename file {new_file}")
+\ No newline at end of file
+diff --git a/main.py b/main.py
+new file mode 100644
+index 0000000..daed944
+--- /dev/null
++++ b/main.py
+@@ -0,0 +1,85 @@
++#!/usr/bin/env python3
++
++import os
++import asyncio
++from lib.config import get_arguments, build_yt_commands
++from lib.url_utils import get_code_from_url
++from lib.file_utils import preparation_download, remove_link_yt_in_file
++from lib.download_utils import sync_download_file, get_code_audio_video, YT_DLP
++from lib.video_utils import combine_audio_video, remove_file
++
++
++def sync_task_download(args):
++    """Main synchronous download task"""
++    files, list_yt, my_folder, file_path = preparation_download(args)
++    yt_cmd_sub, yt_cmd_audio, yt_cmd_video = build_yt_commands(args)
++    
++    for link in list_yt:
++        code = get_code_from_url(link)
++        if not code or link.startswith('#'):
++            continue
++        
++        _, audio_files, video_files = sync_download_file(
++            args, files, code, link, my_folder, yt_cmd_sub, yt_cmd_audio, yt_cmd_video
++        )
++        list_yt = remove_link_yt_in_file(list_yt, link)
++        
++        if not audio_files or not video_files:
++            continue
++            
++        new_file, f_mp4, f_m4a = combine_audio_video(video_files, audio_files, my_folder)
++        
++        if not os.path.exists(new_file):
++            continue
++        
++        remove_file(f_mp4, f_m4a, new_file)
++    
++    with open(file_path, 'w') as f:
++        f.write('\n'.join(list_yt))
++
++
++async def search_yt_dlp(args):
++    """Search and download with format detection"""
++    files, list_yt, my_folder, file_path = preparation_download(args)
++    yt_cmd_sub, yt_cmd_audio_base, yt_cmd_video_base = build_yt_commands(args)
++    
++    for link in list_yt:
++        code = get_code_from_url(link)
++        if not code or link.startswith('#'):
++            continue
++        
++        command = f"python3 {YT_DLP} -F '{link}' --ignore-error --no-playlist "
++        ca, cv = await get_code_audio_video(command, args)
++        if ca is None:
++            ca = args.code_audio
++        if cv is None:
++            cv = args.code_video
++        
++        yt_cmd_audio = "".join(["-f ", ca, " --ignore-error --no-playlist"])
++        yt_cmd_video = "".join(["-f ", cv, " --ignore-error --no-playlist"])
++        
++        _, audio_files, video_files = sync_download_file(
++            args, files, code, link, my_folder, yt_cmd_sub, yt_cmd_audio, yt_cmd_video
++        )
++        
++        if not audio_files or not video_files:
++            continue
++            
++        new_file, f_mp4, f_m4a = combine_audio_video(video_files, audio_files, my_folder)
++        
++        if not os.path.exists(new_file):
++            continue
++        
++        list_yt = remove_link_yt_in_file(list_yt, link)
++        remove_file(f_mp4, f_m4a, new_file)
++    
++    with open(file_path, 'w') as f:
++        f.write('\n'.join(list_yt))
++
++
++if __name__ == '__main__':
++    args = get_arguments()
++    if args.is_search:
++        asyncio.run(search_yt_dlp(args))
++    else:
++        sync_task_download(args)
+\ No newline at end of file
+diff --git a/test-urls.txt b/test-urls.txt
+new file mode 100644
+index 0000000..e1479a4
+--- /dev/null
++++ b/test-urls.txt
+@@ -0,0 +1 @@
++# https://www.youtube.com/watch?v=dQw4w9WgXcQ
+\ No newline at end of file
+diff --git a/yt-dlp b/yt-dlp
+new file mode 100755
+index 0000000..d0e858e
+Binary files /dev/null and b/yt-dlp differ
