@@ -6,10 +6,12 @@ import argparse
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter, SRTFormatter
 
-YT_DLP = '~/Videos/_/yt-dlp --cookies ~/Videos/_/cookies.txt'
-YT_CMD = '--write-auto-subs --sub-format vtt --sub-lang id -f 136,140 --ignore-error --no-playlist -a --cookies ~/Videos/_/cookies.txt'
-YT_CMD_SUB_1 = '--write-auto-subs --sub-format vtt --sub-lang id --ignore-error --no-playlist --cookies ~/Videos/_/cookies.txt'
-YT_CMD_SUB = '--write-auto-subs --ignore-error --no-playlist --cookies ~/Videos/_/cookies.txt'
+# Get script directory for relative paths
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+YT_DLP = os.path.join(SCRIPT_DIR, 'yt-dlp')
+COOKIES = os.path.join(SCRIPT_DIR, 'cookies.txt')
+SUB_LANG = 'en'
+YT_CMD = f'-f 136,140 --ignore-error --no-playlist -a --cookies {COOKIES}'
 YT_CMD_AUDIO = '-f 140 --ignore-error --no-playlist '
 YT_CMD_AUDIO = '-f 140 --ignore-error --no-playlist '
 YT_CMD_VIDEO = '-f 136 --ignore-error --no-playlist '
@@ -165,7 +167,7 @@ def preparation_download(args):
     FILE_PATH = os.path.join(MY_FOLDER, args.file)
     if os.path.isfile(FILE_PATH):
         print(f"The file {args.file} : {FILE_PATH} exists.")
-        # os.system(f"python3 {YT_DLP} {YT_CMD} {file_path}")
+        # os.system(f"{YT_DLP} {YT_CMD} {file_path}")
     else:
         print(f"The file {args.file} : {FILE_PATH} does not exist. Please add it and insert url youtube links.")
         exit()
@@ -189,21 +191,17 @@ async def main():
         if not code:
             continue
         
-        vtt_files = check_files_with_code_and_ext(files, code, '.vtt')
-        if not vtt_files:
-            command = f"python3 {YT_DLP} {YT_CMD_SUB} '{link}'"
-            await download_file(command)
             
         audio_files = check_files_with_code_and_ext(files, code, '.m4a')
         if not audio_files:
-            command = f"python3 {YT_DLP} {YT_CMD_AUDIO} '{link}'"
+            command = f"{YT_DLP} {YT_CMD_AUDIO} '{link}'"
             await download_file(command)
             files = os.listdir(MY_FOLDER)
             audio_files = check_files_with_code_and_ext(files, code, '.m4a')
         
         video_files = check_files_with_code_and_ext(files, code, '.mp4')
         if not video_files:
-            command = f"python3 {YT_DLP} {YT_CMD_VIDEO} '{link}'"
+            command = f"{YT_DLP} {YT_CMD_VIDEO} '{link}'"
             await download_file(command)
             files = os.listdir(MY_FOLDER)
             video_files = check_files_with_code_and_ext(files, code, '.mp4')
@@ -235,15 +233,14 @@ async def main():
 
 
 def get_arguments():
-    global YT_CMD_AUDIO, YT_CMD_VIDEO, YT_CMD_SUB
+    global YT_CMD_AUDIO, YT_CMD_VIDEO
     # Create the parser
     parser = argparse.ArgumentParser(description='A script to download and process videos.')
 
     # Add arguments
     parser.add_argument('--folder', default='.', type=str, help='Current folder work')
     parser.add_argument('-f','--file', default='t-yt-dl.txt', type=str, help='File content link youtube')
-    parser.add_argument('-sf', '--sub-format', default='vtt', type=str, help='Type Subformat of the subtitle')
-    parser.add_argument('-sl', '--sub-lang', default='id', type=str, help='Language of the subtitle')
+    parser.add_argument('-sl', '--sub-lang', default='en', type=str, help='Language of the subtitle')
     parser.add_argument('-is', '--is-search', type=bool, default=False, help='Is Search using yt-dlp -F ')
     parser.add_argument('-ca', '--code-audio', type=str, default="140", help='The code audio for download file ')
     parser.add_argument('-cv', '--code-video', type=str, default="136", help='The code video for download file')
@@ -254,29 +251,104 @@ def get_arguments():
     parser.add_argument('-iv', '--info-video', type=str, default="en", help='The info video for download file')
     parser.add_argument('--download-txt', action='store_true', help='Download subtitles as TXT format using youtube-transcript-api')
     parser.add_argument('--download-srt', action='store_true', help='Download subtitles as SRT format using youtube-transcript-api')
+    parser.add_argument('-c', '--cookies', default=os.path.join(SCRIPT_DIR, 'cookies.txt'), type=str, help='Path to cookies file')
 
     # Parse the arguments
     try:
         args = parser.parse_args()
-    except SystemExit as e:
+    except SystemExit:
         parser.print_help()
         sys.exit()
 
     # Print the arguments (for demonstration purposes)
-    print(f"Folder: {args.folder}, Sub Format: {args.sub_format}, Sub Lang: {args.sub_lang}, Is Search: {args.is_search}, "
+    print(f"Folder: {args.folder}, Sub Lang: {args.sub_lang}, Is Search: {args.is_search}, "
           f"Code Audio: {args.code_audio}, Code Video: {args.code_video}, Ext Audio: {args.ext_audio}, Ext Video : {args.ext_video}, "
           f"Ext Full Video : {args.ext_video2}, Info Audio: {args.info_audio}, Info Video: {args.info_video}, "
-          f"Download TXT: {args.download_txt}, Download SRT: {args.download_srt}"
+          f"Download TXT: {args.download_txt}, Download SRT: {args.download_srt}, Cookies: {args.cookies}"
           )
     
-    YT_CMD_SUB = f"--extractor-args 'youtube:player_client=default,-web' --write-auto-subs --sub-format {args.sub_format} --sub-lang {args.sub_lang} --ignore-error --no-playlist "
-    YT_CMD_SUB_0 = f"--write-auto-subs --ignore-error --no-playlist "
+    global SUB_LANG, COOKIES
+    SUB_LANG = args.sub_lang
+    COOKIES = args.cookies
     YT_CMD_AUDIO = "".join(["-f ", args.code_audio, " --ignore-error --no-playlist"])
     YT_CMD_AUDIO = "".join(["-f ", args.code_audio, " --ignore-error --no-playlist"])
     YT_CMD_VIDEO = "".join(["-f ", args.code_video, " --ignore-error --no-playlist"])
     
     return args
     
+def parse_formats_and_select_codes(output_lines):
+    """Parse yt-dlp --list-formats output and select best audio/video codes"""
+    audio_candidates = []
+    video_candidates = []
+    
+    for line in output_lines:
+        line = line.strip()
+        if not line or line.startswith('─') or line.startswith('[') or line.startswith('ID'):
+            continue
+        
+        parts = line.split()
+        if len(parts) < 4:
+            continue
+            
+        format_id = parts[0]
+        ext = parts[1] if len(parts) > 1 else ''
+        resolution = parts[2] if len(parts) > 2 else ''
+        
+        # Skip storyboard formats
+        if 'sb' in format_id or 'mhtml' in ext:
+            continue
+        
+        # Collect audio only mp4 formats
+        if 'audio only' in line and 'mp4' in ext:
+            try:
+                audio_candidates.append(int(format_id))
+            except ValueError:
+                continue
+        
+        # Collect 720p60 mp4_dash video formats
+        if '720p60' in line and 'mp4_dash' in line:
+            try:
+                video_candidates.append(int(format_id))
+            except ValueError:
+                continue
+        # Fallback: collect regular 720p mp4 formats if no 720p60 found
+        elif '720p' in line and 'mp4' in ext and not any('720p60' in l for l in output_lines):
+            try:
+                video_candidates.append(int(format_id))
+            except ValueError:
+                continue
+        # Fallback: collect 480p mp4 formats if no 720p found  
+        elif '480p' in line and 'mp4' in ext and not any('720p' in l for l in output_lines):
+            try:
+                video_candidates.append(int(format_id))
+            except ValueError:
+                continue
+    
+    # Select highest code number for audio (prefer 234 over 140)
+    audio_code = str(max(audio_candidates)) if audio_candidates else None
+    
+    # Select highest code number for video (prefer 398 over 298)
+    video_code = str(max(video_candidates)) if video_candidates else None
+    
+    return audio_code, video_code
+
+def run_download_command(command, description=""):
+    """Run download command and check for HTTP 403 errors"""
+    print(f"Running: {command}")
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    
+    # Check for HTTP 403 Forbidden errors in output
+    if "HTTP Error 403: Forbidden" in result.stderr or "HTTP Error 403: Forbidden" in result.stdout:
+        print(f"HTTP 403 Forbidden error detected for {description}. Skipping this download.")
+        return False
+    
+    # Check for other critical errors that should stop download
+    if "ERROR:" in result.stderr and "fragment" in result.stderr and "403" in result.stderr:
+        print(f"Fragment download failed with 403 error for {description}. Skipping this download.")
+        return False
+    
+    return result.returncode == 0
+
 def sync_download_file(args, files, code, link):
     # Download subtitles using youtube-transcript-api for TXT and SRT formats
     if hasattr(args, 'download_txt') and args.download_txt:
@@ -289,35 +361,99 @@ def sync_download_file(args, files, code, link):
         if not srt_files:
             download_transcript_as_srt(code, args.sub_lang)
     
-    # Keep original VTT download functionality
-    vtt_files = check_files_with_code_and_ext(files, code, args.sub_format)
-    if not vtt_files:
-        command = f"python3 {YT_DLP} {YT_CMD_SUB} '{link}'"
-        print("Download Full : ",command)
-        os.system(command)
     
     files = os.listdir(MY_FOLDER)
     full_video_files = check_files_with_code_and_ext(files, code, args.ext_video2)
     if full_video_files:
-        return vtt_files, False, False
+        return False, False
     
+    # Download audio with code 140
     audio_files = check_files_with_code_and_ext(files, code, args.ext_audio)
+    audio_success = False
     if not audio_files:
-        command = f"python3 {YT_DLP} {YT_CMD_AUDIO} '{link}'"
-        print("Download Audio : ", command)
-        os.system(command)
-        files = os.listdir(MY_FOLDER)
-        audio_files = check_files_with_code_and_ext(files, code, args.ext_audio)
+        command = f"{YT_DLP} -f 140 --ignore-error --no-playlist --cookies {COOKIES} '{link}'"
+        if run_download_command(command, "Audio (140)"):
+            files = os.listdir(MY_FOLDER)
+            audio_files = check_files_with_code_and_ext(files, code, args.ext_audio)
+            if audio_files:
+                audio_success = True
+        
+        # If 140 failed and no 403 error, try fallback for audio
+        if not audio_success and not audio_files:
+            print("Audio 140 failed, trying fallback with --list-formats...")
+            command = f"{YT_DLP} --list-formats '{link}' --ignore-error --no-playlist --cookies {COOKIES}"
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                output_lines = result.stdout.split('\n')
+                fallback_audio_code, _ = parse_formats_and_select_codes(output_lines)
+                
+                if fallback_audio_code:
+                    print(f"Selected fallback audio code: {fallback_audio_code}")
+                    command = f"{YT_DLP} -f {fallback_audio_code} --ignore-error --no-playlist --cookies {COOKIES} '{link}'"
+                    if run_download_command(command, f"Audio ({fallback_audio_code})"):
+                        files = os.listdir(MY_FOLDER)
+                        audio_files = check_files_with_code_and_ext(files, code, args.ext_audio)
+                        if audio_files:
+                            audio_success = True
+                        else:
+                            print(f"Fallback audio download with code {fallback_audio_code} completed but no files found.")
+                    else:
+                        print(f"Fallback audio download with code {fallback_audio_code} failed.")
+                else:
+                    print("No suitable fallback audio code found.")
+            else:
+                print(f"Failed to get formats list for audio fallback: {result.stderr}")
+    else:
+        audio_success = True
     
+    # Download video with code 136
     video_files = check_files_with_code_and_ext(files, code, args.ext_video)
+    video_success = False
     if not video_files:
-        command = f"python3 {YT_DLP} {YT_CMD_VIDEO} '{link}'"
-        print('Download Video : ', command)
-        os.system(command)
-        files = os.listdir(MY_FOLDER)
-        video_files = check_files_with_code_and_ext(files, code, args.ext_video)
+        command = f"{YT_DLP} -f 136 --ignore-error --no-playlist --cookies {COOKIES} '{link}'"
+        if run_download_command(command, "Video (136)"):
+            files = os.listdir(MY_FOLDER)
+            video_files = check_files_with_code_and_ext(files, code, args.ext_video)
+            if video_files:
+                video_success = True
+        
+        # If 136 failed and no 403 error, try fallback for video
+        if not video_success and not video_files:
+            print("Video 136 failed, trying fallback with --list-formats...")
+            command = f"{YT_DLP} --list-formats '{link}' --ignore-error --no-playlist --cookies {COOKIES}"
+            result = subprocess.run(command, shell=True, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                output_lines = result.stdout.split('\n')
+                _, fallback_video_code = parse_formats_and_select_codes(output_lines)
+                
+                if fallback_video_code:
+                    print(f"Selected fallback video code: {fallback_video_code}")
+                    command = f"{YT_DLP} -f {fallback_video_code} --ignore-error --no-playlist --cookies {COOKIES} '{link}'"
+                    if run_download_command(command, f"Video ({fallback_video_code})"):
+                        files = os.listdir(MY_FOLDER)
+                        video_files = check_files_with_code_and_ext(files, code, args.ext_video)
+                        if video_files:
+                            video_success = True
+                        else:
+                            print(f"Fallback video download with code {fallback_video_code} completed but no files found.")
+                    else:
+                        print(f"Fallback video download with code {fallback_video_code} failed.")
+                else:
+                    print("No suitable fallback video code found.")
+            else:
+                print(f"Failed to get formats list for video fallback: {result.stderr}")
+    else:
+        video_success = True
     
-    return vtt_files, audio_files, video_files
+    # Report final status
+    if not audio_success:
+        print(f"FAILED: Could not download audio for video {code}")
+    if not video_success:
+        print(f"FAILED: Could not download video for video {code}")
+    
+    return audio_files, video_files
 
 def combine_audio_video(video_files, audio_files):
     new_file = f'temp_{video_files[0]}'
@@ -352,10 +488,12 @@ def sync_task_download(args):
         if not code or link.startswith('#'):
             continue
         
-        _, audio_files, video_files = sync_download_file(args, files, code, link)
-        list_yt = remove_link_yt_in_file(list_yt, link)
+        audio_files, video_files = sync_download_file(args, files, code, link)
         
-        if not audio_files or not video_files:
+        if audio_files and video_files:
+            list_yt = remove_link_yt_in_file(list_yt, link)
+        else:
+            print(f"Failed to download both audio and video for: {link}")
             continue
             
         new_file, f_mp4, f_m4a = combine_audio_video(video_files, audio_files)
@@ -376,7 +514,7 @@ async def search_yt_dlp(args):
         if not code or link.startswith('#'):
             continue
         
-        command = f"python3 {YT_DLP} -F '{link}' --ignore-error --no-playlist "
+        command = f"{YT_DLP} -F '{link}' --ignore-error --no-playlist --cookies {COOKIES}"
         ca, cv = await get_code_audio_video(command,args)
         if ca is None :
             ca = args.code_audio
@@ -386,7 +524,7 @@ async def search_yt_dlp(args):
         YT_CMD_AUDIO = "".join(["-f ", ca, " --ignore-error --no-playlist"])
         YT_CMD_VIDEO = "".join(["-f ", cv, " --ignore-error --no-playlist"])
         
-        _, audio_files, video_files = sync_download_file(args, files, code, link)
+        audio_files, video_files = sync_download_file(args, files, code, link)
         
         if not audio_files or not video_files:
             continue
