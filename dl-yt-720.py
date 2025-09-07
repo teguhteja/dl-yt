@@ -1,4 +1,3 @@
-import sys
 import os
 import subprocess
 import asyncio
@@ -12,14 +11,10 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 YT_DLP = os.path.join(SCRIPT_DIR, 'yt-dlp')
 COOKIES = os.path.join(SCRIPT_DIR, 'cookies.txt')
 CODE_CONF = os.path.join(SCRIPT_DIR, 'code.conf')
-SUB_LANG = 'en'
-YT_CMD = f'-f 136,140 --ignore-error --no-playlist -a --cookies {COOKIES}'
-YT_CMD_AUDIO = '-f 140 --ignore-error --no-playlist '
 YT_CMD_AUDIO = '-f 140 --ignore-error --no-playlist '
 YT_CMD_VIDEO = '-f 136 --ignore-error --no-playlist '
 MY_FOLDER = ''
 FILE_PATH = ''
-# YT_CMD = '-f 136,140 --ignore-error --no-playlist -a'
 
 
 def load_config_codes():
@@ -75,11 +70,6 @@ def get_base_filename_from_video(video_filename):
     base_name = os.path.splitext(video_filename)[0]
     return base_name
 
-
-def get_mp4_m4a(files_combine):
-    f_mp4 = list(filter(lambda x: '.mp4' in x, files_combine))
-    f_m4a = list(filter(lambda x: '.m4a' in x, files_combine))
-    return f_mp4, f_m4a
 
 
 def check_files_with_code_and_ext(files, code, exts):
@@ -173,23 +163,35 @@ def download_transcript_as_srt(video_code, selected_language, base_filename=None
 
 
 async def download_file(command):
+    """Async version of download with real-time output"""
+    print(f"🚀 Starting async download")
+    print(f"📋 Command: {command}")
+    print("=" * 60)
+    
     process = await asyncio.create_subprocess_shell(
         command,
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
+        stderr=asyncio.subprocess.STDOUT
     )
 
-    stdout, stderr = await process.communicate()
+    # Read and display output in real-time
+    output_lines = []
+    while True:
+        line = await process.stdout.readline()
+        if not line:
+            break
+        line_str = line.decode().rstrip()
+        print(line_str)  # Display immediately
+        output_lines.append(line_str)
+    
+    await process.wait()
     
     if process.returncode == 0:
-        list_out = stdout.splitlines()
-        out = [item.decode() for item in list_out if 'downloaded' in item.decode()] 
-        if out:
-            print(f"{out[0]}")
-        else : 
-            print(f"File Downloaded : {list_out}") 
+        print("✅ Async download completed successfully!")
+        print("=" * 60)
     else:
-        print(f"Error downloading file: {stderr.decode()}")
+        print(f"❌ Async download failed with return code: {process.returncode}")
+        print("=" * 60)
         
 
 async def get_code_audio_video(command,args):
@@ -252,53 +254,6 @@ def preparation_download(args):
     return files, list_yt
 
 
-async def main():
-    files, list_yt = preparation_download()    
-    for link in list_yt:
-        code = get_code_from_url(link)
-        
-        if not code:
-            continue
-        
-            
-        audio_files = check_files_with_code_and_ext(files, code, '.m4a')
-        if not audio_files:
-            command = f"{YT_DLP} {YT_CMD_AUDIO} '{link}'"
-            await download_file(command)
-            files = os.listdir(MY_FOLDER)
-            audio_files = check_files_with_code_and_ext(files, code, '.m4a')
-        
-        video_files = check_files_with_code_and_ext(files, code, '.mp4')
-        if not video_files:
-            command = f"{YT_DLP} {YT_CMD_VIDEO} '{link}'"
-            await download_file(command)
-            files = os.listdir(MY_FOLDER)
-            video_files = check_files_with_code_and_ext(files, code, '.mp4')
-        
-        if not audio_files or not video_files:
-            continue
-        
-        new_file = f'temp_{video_files[0]}'
-        f_mp4 = os.path.join(MY_FOLDER, video_files[0])
-        f_m4a = os.path.join(MY_FOLDER, audio_files[0])
-        new_file = os.path.join(MY_FOLDER, new_file)
-        command = ["ffmpeg", "-i", f_mp4, "-i", f_m4a, "-c:v", "copy", "-c:a", "aac", new_file]
-        subprocess.run(command, check=True)
-
-        if not os.path.exists(new_file):
-            continue
-            
-        os.remove(f_mp4)
-        print(f"Delete file {f_mp4}")
-        os.remove(f_m4a)
-        print(f"Delete file {f_m4a}")
-        os.rename(new_file,f_mp4)
-        print(f"Rename file {new_file}")
-        # Write list_yt into t-yt-dl.txt
-        list_yt.remove(link)
-    
-    with open(FILE_PATH, 'w') as f:
-        f.write('\n'.join(list_yt))
 
 
 def get_arguments():
@@ -328,11 +283,7 @@ def get_arguments():
     parser.add_argument('-c', '--cookies', default=os.path.join(SCRIPT_DIR, 'cookies.txt'), type=str, help='Path to cookies file')
 
     # Parse the arguments
-    try:
-        args = parser.parse_args()
-    except SystemExit:
-        parser.print_help()
-        sys.exit()
+    args = parser.parse_args()
 
     # Store all config codes in args for later use
     args.config_audio_codes = config_audio_codes
@@ -346,10 +297,8 @@ def get_arguments():
           f"Subtitles: {subtitle_status}, Cookies: {args.cookies}"
           )
     
-    global SUB_LANG, COOKIES
-    SUB_LANG = args.sub_lang
+    global COOKIES
     COOKIES = args.cookies
-    YT_CMD_AUDIO = "".join(["-f ", args.code_audio, " --ignore-error --no-playlist"])
     YT_CMD_AUDIO = "".join(["-f ", args.code_audio, " --ignore-error --no-playlist"])
     YT_CMD_VIDEO = "".join(["-f ", args.code_video, " --ignore-error --no-playlist"])
     
@@ -357,21 +306,61 @@ def get_arguments():
     
 
 def run_download_command(command, description=""):
-    """Run download command and check for HTTP 403 errors"""
-    print(f"Running: {command}")
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    """Run download command with real-time output and error checking"""
+    print(f"🚀 Starting download: {description}")
+    print(f"📋 Command: {command}")
+    print("=" * 60)
     
-    # Check for HTTP 403 Forbidden errors in output
-    if "HTTP Error 403: Forbidden" in result.stderr or "HTTP Error 403: Forbidden" in result.stdout:
-        print(f"HTTP 403 Forbidden error detected for {description}. Skipping this download.")
+    # Run command with real-time output
+    process = subprocess.Popen(
+        command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        bufsize=1
+    )
+    
+    # Collect output for error checking while displaying it
+    output_lines = []
+    
+    try:
+        # Read output line by line and display immediately
+        for line in iter(process.stdout.readline, ''):
+            if line:
+                print(line.rstrip())  # Display line immediately
+                output_lines.append(line)
+        
+        # Wait for process to complete
+        process.wait()
+        
+        # Join all output for error checking
+        full_output = ''.join(output_lines)
+        
+        # Check for HTTP 403 Forbidden errors
+        if "HTTP Error 403: Forbidden" in full_output:
+            print(f"❌ HTTP 403 Forbidden error detected for {description}. Skipping this download.")
+            return False
+        
+        # Check for other critical errors that should stop download
+        if "ERROR:" in full_output and "fragment" in full_output and "403" in full_output:
+            print(f"❌ Fragment download failed with 403 error for {description}. Skipping this download.")
+            return False
+        
+        # Check if download was successful
+        if process.returncode == 0:
+            print(f"✅ {description} download completed successfully!")
+            print("=" * 60)
+            return True
+        else:
+            print(f"❌ {description} download failed with return code: {process.returncode}")
+            print("=" * 60)
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error during {description} download: {str(e)}")
+        process.terminate()
         return False
-    
-    # Check for other critical errors that should stop download
-    if "ERROR:" in result.stderr and "fragment" in result.stderr and "403" in result.stderr:
-        print(f"Fragment download failed with 403 error for {description}. Skipping this download.")
-        return False
-    
-    return result.returncode == 0
 
 def download_subtitles_for_video(args, files, code, video_files):
     """Download subtitles using video filename as base"""
@@ -441,10 +430,11 @@ def sync_download_file(args, files, code, link):
     successful_audio_code = None
     
     if not audio_files:
+        print(f"🎵 No audio files found for {code}, starting download...")
         for audio_code in args.config_audio_codes:
-            print(f"Trying audio code: {audio_code}")
+            print(f"\n🔄 Attempting audio download with code: {audio_code}")
             command = f"{YT_DLP} -f {audio_code} --ignore-error --no-playlist --cookies {COOKIES} '{link}'"
-            if run_download_command(command, f"Audio ({audio_code})"):
+            if run_download_command(command, f"Audio with code {audio_code}"):
                 files = os.listdir(MY_FOLDER)
                 audio_files = check_files_with_code_and_ext(files, code, args.ext_audio)
                 if audio_files:
@@ -452,10 +442,10 @@ def sync_download_file(args, files, code, link):
                     successful_audio_code = audio_code
                     print(f"✅ Audio download successful with code {audio_code}")
                     break
-            print(f"❌ Audio code {audio_code} failed, trying next...")
+            print(f"❌ Audio code {audio_code} failed, trying next code if available...")
     else:
         audio_success = True
-        print(f"✅ Audio file already exists for {code}")
+        print(f"✅ Audio file already exists for {code}: {audio_files[0]}")
     
     # Download video - try all codes from config sequentially
     video_files = check_files_with_code_and_ext(files, code, args.ext_video)
@@ -463,10 +453,11 @@ def sync_download_file(args, files, code, link):
     successful_video_code = None
     
     if not video_files:
+        print(f"🎬 No video files found for {code}, starting download...")
         for video_code in args.config_video_codes:
-            print(f"Trying video code: {video_code}")
+            print(f"\n🔄 Attempting video download with code: {video_code}")
             command = f"{YT_DLP} -f {video_code} --ignore-error --no-playlist --cookies {COOKIES} '{link}'"
-            if run_download_command(command, f"Video ({video_code})"):
+            if run_download_command(command, f"Video with code {video_code}"):
                 files = os.listdir(MY_FOLDER)
                 video_files = check_files_with_code_and_ext(files, code, args.ext_video)
                 if video_files:
@@ -474,10 +465,10 @@ def sync_download_file(args, files, code, link):
                     successful_video_code = video_code
                     print(f"✅ Video download successful with code {video_code}")
                     break
-            print(f"❌ Video code {video_code} failed, trying next...")
+            print(f"❌ Video code {video_code} failed, trying next code if available...")
     else:
         video_success = True
-        print(f"✅ Video file already exists for {code}")
+        print(f"✅ Video file already exists for {code}: {video_files[0]}")
     
     # Download subtitles after video is successfully downloaded or already exists
     if video_success and video_files:
@@ -588,7 +579,8 @@ async def search_yt_dlp(args):
         if not os.path.exists(new_file):
             continue
         
-        list_yt = remove_file(f_mp4, f_m4a, new_file, list_yt, link)
+        remove_file(f_mp4, f_m4a, new_file)
+        list_yt = remove_link_yt_in_file(list_yt, link)
     
     with open(FILE_PATH, 'w') as f:
         f.write('\n'.join(list_yt))
@@ -597,6 +589,5 @@ if __name__ == '__main__':
     args = get_arguments()
     if args.is_search:
         asyncio.run(search_yt_dlp(args))
-    else : 
+    else:
         sync_task_download(args)
-        # asyncio.run(main())
